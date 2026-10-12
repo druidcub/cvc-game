@@ -1,0 +1,37 @@
+const assert = require('node:assert/strict');
+const {normalize,matchesWord} = require('../dist/speech.js');
+assert.equal(normalize('  CAT!  '),'cat');
+assert.equal(matchesWord('cat','Cat.'),true);
+assert.equal(matchesWord('Dan','dan'),true);
+assert.equal(matchesWord('ten','10'),true);
+assert.equal(matchesWord('cat','a cat'),false);
+assert.equal(matchesWord('cat','cats'),false);
+assert.equal(matchesWord('cat','cap'),false);
+assert.equal(matchesWord('sun','son'),false);
+assert.equal(matchesWord('cat',''),false);
+console.log('PASS: exact word matching, punctuation/case normalization, numeric ten and rejection of incorrect words.');
+const vm=require('node:vm'), fs=require('node:fs');
+const controls=new Map();
+function element(){return {isConnected:true,disabled:false,textContent:'',classList:{add(){},remove(){}},querySelector(selector){return controls.get(selector.slice(1));},showModal(){this.open=true;},close(){this.open=false;},addEventListener(){}};}
+for(const id of ['mic-button','mic-status','mic-not-now','mic-confirm'])controls.set(id,element());
+const recognitions=[];
+class FakeRecognition {constructor(){recognitions.push(this);}start(){this.onstart?.();}abort(){this.aborted=true;this.onend?.();}}
+let timeout;
+const win={SpeechRecognition:FakeRecognition,isSecureContext:true,speechSynthesis:{cancel(){}},document:{getElementById:id=>controls.get(id),createElement:()=>element(),body:{append(el){controls.set(el.id,el);}}}};
+vm.runInNewContext(fs.readFileSync(require.resolve('../dist/speech.js'),'utf8'),{window:win,document:win.document,setTimeout:fn=>{timeout=fn;return 1;},clearTimeout(){timeout=null;}});
+const button=controls.get('mic-button'),status=controls.get('mic-status');
+win.WordSpeech.attach('cat');button.onclick();
+assert.equal(recognitions.length,0,'No microphone start before consent');
+controls.get('mic-confirm').onclick();
+assert.equal(recognitions.length,1);const first=recognitions[0];
+assert.equal(first.lang,'en-US');assert.equal(first.continuous,false);
+first.onresult({resultIndex:0,results:[[{transcript:'Cat.'}]]});
+assert.match(status.textContent,/一致/);first.onend();
+button.onclick();const second=recognitions[1];second.onerror({error:'not-allowed'});
+assert.match(status.textContent,/尚未獲准/);second.onend();
+button.onclick();const third=recognitions[2];win.WordSpeech.cancel();
+const cancelled=status.textContent;third.onresult({resultIndex:0,results:[[{transcript:'cat'}]]});
+assert.equal(third.aborted,true);assert.equal(status.textContent,cancelled,'Late results must not change feedback after cancellation');
+button.onclick();const fourth=recognitions[3];timeout();assert.equal(fourth.aborted,true);assert.match(status.textContent,/收音已結束/);
+win.isSecureContext=false;win.WordSpeech.attach('cat');assert.equal(button.disabled,true);
+console.log('PASS: explicit consent, recognition success, denied permission, cancellation, stale callbacks, timeout and HTTPS requirement (simulated recognition, no real audio).');
