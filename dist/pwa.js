@@ -1,5 +1,19 @@
 (() => {
   'use strict';
+  // Keep one-finger scrolling, but prevent accidental browser zoom in the game.
+  const preventZoom = event => { if (event.cancelable) event.preventDefault(); };
+  for (const name of ['gesturestart', 'gesturechange', 'gestureend']) {
+    document.addEventListener(name, preventZoom, { passive: false });
+  }
+  document.addEventListener('touchmove', event => {
+    if (event.touches.length > 1) preventZoom(event);
+  }, { passive: false });
+  document.addEventListener('wheel', event => {
+    if (event.ctrlKey || event.metaKey) preventZoom(event);
+  }, { passive: false });
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && ['+', '=', '-', '_', '0', 'Add', 'Subtract'].includes(event.key)) preventZoom(event);
+  });
   const status = document.getElementById('offline-status');
   const install = document.getElementById('install-game');
   const update = document.getElementById('update-game');

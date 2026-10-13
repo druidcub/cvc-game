@@ -2,3 +2,5 @@
 
 .speaking-panel{background:#f5f0ff;border:1px solid #e1d8ed;border-radius:18px;padding:20px;margin:24px 0}.mic-button{background:#80629d;color:white;min-width:180px}.mic-button.recording{background:#b55657}.mic-status{font-size:13px;min-height:46px;line-height:1.8;margin-top:15px}.speaking-panel h3{color:#715386}
 [hidden]{display:none!important}.pwa-bar{max-width:1180px;margin:12px auto 0;padding:0 26px;display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--green);font-size:12px}.pwa-bar button{padding:8px 12px;background:#e8eedc;font-size:12px}.pwa-bar>div{display:flex;gap:8px}@media(max-width:700px){.pwa-bar{padding:0 16px;align-items:flex-start;flex-wrap:wrap}}
+
+html,body{touch-action:pan-x pan-y}
