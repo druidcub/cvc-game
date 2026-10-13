@@ -46,7 +46,7 @@
       return;
     }
     function start() {
-      if (!button.isConnected) return;
+      if (!button.isConnected) return; if (root.navigator?.onLine === false) { status.textContent = '目前離線，麥克風辨識需要網路；可以繼續看字跟讀與測驗。'; return; }
       cancel(); root.speechSynthesis?.cancel();
       const recognition = new Recognition(), attempt = { recognition, button, status };
       active = attempt;
