@@ -1,6 +1,6 @@
 'use strict';
 // Change VERSION whenever the precached game files change.
-const VERSION = '2026-10-13-v1';
+const VERSION = '2026-10-13-v2';
 const BASE = new URL('./', self.location.href);
 const PREFIX = `word-garden:${BASE.pathname}:`;
 const CACHE = PREFIX + VERSION;

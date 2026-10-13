@@ -44,14 +44,14 @@
   }
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) { location.reload(); return; }
-    checkReady(navigator.serviceWorker.controller);
+    showWaiting(); checkReady(navigator.serviceWorker.controller);
   });
   navigator.serviceWorker.register('../sw.js', { scope: '../', updateViaCache: 'none' }).then(reg => {
     registration = reg; showWaiting(); checkReady(reg.active);
     reg.addEventListener('updatefound', () => {
       const worker = reg.installing;
       worker?.addEventListener('statechange', () => {
-        if (worker.state === 'installed') showWaiting();
+        if (worker.state === 'installed' || worker.state === 'activated') showWaiting();
         if (worker.state === 'redundant' && !ready) status.textContent = '離線準備未完成，請檢查網路並重新開啟。';
       });
     });
