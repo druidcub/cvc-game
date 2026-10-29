@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const jar={value:'',last:'',blocked:false},storage=new Map();
+function load(){
+ const elements=new Map();
+ const element=selector=>{if(!elements.has(selector))elements.set(selector,{value:'',innerHTML:'',textContent:'',classList:{add(){},remove(){},toggle(){}},append(){},showModal(){}});return elements.get(selector);};
+ const document={querySelector:element,querySelectorAll:()=>[],addEventListener(){},createElement:()=>({})};
+ Object.defineProperty(document,'cookie',{get:()=>jar.value,set:value=>{if(jar.blocked)throw new Error('Cookies blocked');jar.last=value;jar.value=value.split(';')[0];}});
+ const window={addEventListener(){}};
+ const context=vm.createContext({document,window,location:{href:'https://druidcub.github.io/cvc-game/dist/',protocol:'https:'},URL,localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},WordSpeech:{cancel(){}},setTimeout,clearTimeout});
+ vm.runInContext(fs.readFileSync(path.join(root,'dist/data.js'),'utf8'),context);
+ const source=fs.readFileSync(path.join(root,'dist/app.js'),'utf8').replace(/render\(\);\s*$/,'');
+ vm.runInContext(source+';globalThis.api={renderHome,englishVoices,getState:()=>state};',context);
+ context.api.renderHome();return {context,element,api:context.api};
+}
+let page=load();assert.equal(page.element('#limit').value,'10');
+page.element('#limit').onchange({target:{value:'20'}});
+page.element('#voice').onchange({target:{value:'English voice; = 測試'}});
+page.element('#speed').onchange({target:{value:'0.65'}});
+assert.match(jar.last,/Max-Age=31536000; Path=\/cvc-game\/; SameSite=Lax; Secure/);
+assert.equal(decodeURIComponent(jar.value).includes('records'),false);
+page=load();assert.equal(page.element('#limit').value,'20');assert.equal(page.api.getState().rate,.65);assert.equal(page.api.getState().voice,'English voice; = 測試');
+page.element('#all').onclick();assert.equal(page.element('#limit').value,'20','Returning/re-rendering home preserves selection');
+page.element('#limit').onchange({target:{value:'0'}});page=load();assert.equal(page.element('#limit').value,'0','All words (zero) survives reopening');
+page.context.window.speechSynthesis=true;page.context.speechSynthesis={getVoices:()=>[]};page.api.englishVoices();assert.equal(page.element('#voice').value,'');assert.equal(page.api.getState().voice,'English voice; = 測試');
+page.context.speechSynthesis.getVoices=()=>[{voiceURI:'English voice; = 測試',name:'English',lang:'en-US'}];page.api.englishVoices();assert.equal(page.element('#voice').value,'English voice; = 測試');
+jar.value='cvc-game-options-v1=%broken';assert.doesNotThrow(load);
+jar.value='cvc-game-options-v1='+encodeURIComponent(JSON.stringify({limit:999,rate:20,voice:42}));page=load();assert.equal(page.api.getState().limit,0);assert.equal(page.api.getState().rate,.65);
+jar.blocked=true;page.element('#limit').onchange({target:{value:'10'}});page=load();assert.equal(page.element('#limit').value,'10','localStorage fallback when cookie writing is blocked');
+jar.blocked=false;jar.value='';storage.clear();storage.set('word-garden-v1',JSON.stringify({stars:[],records:[],selected:['at'],rate:1,voice:'Legacy voice'}));page=load();assert.equal(page.api.getState().voice,'Legacy voice');assert.equal(page.api.getState().rate,1);assert.equal(page.element('#limit').value,'10');
+console.log('PASS: all three dropdowns restore after reopening, all-words value, home re-render, unavailable voice recovery, scoped secure cookie, malformed values, blocked cookie fallback and legacy settings.');
