@@ -1,12 +1,12 @@
 'use strict';
 // Change VERSION whenever the precached game files change.
-const VERSION = '2026-10-29-v1';
+const VERSION = '2026-11-04-v1';
 const BASE = new URL('./', self.location.href);
 const PREFIX = `word-garden:${BASE.pathname}:`;
 const CACHE = PREFIX + VERSION;
 const CORE = [
   './', 'index.html', 'dist/', 'dist/index.html', 'dist/style.css',
-  'dist/data.js', 'dist/speech.js', 'dist/app.js', 'dist/pwa.js',
+  'dist/data.js', 'dist/speech.js', 'dist/tracker.js', 'dist/app.js', 'dist/pwa.js',
   'dist/manifest.webmanifest', 'dist/icons/icon-192.png',
   'dist/icons/icon-512.png', 'dist/icons/icon-maskable-512.png',
   'dist/icons/apple-touch-icon.png'
